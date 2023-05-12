@@ -18,35 +18,34 @@ def load_file(path: str) -> dict[str, Any]:
 def replace_key(
     workspace_manifest: dict[str, Any], table: dict[str, Any], section: str, key: str
 ) -> bool:
-    if "workspace" in table[key] and table[key]["workspace"] is True:
-        print("replacing " + key)
+    if "workspace" not in table[key] or table[key]["workspace"] is not True:
+        return False
+    print(f"replacing {key}")
 
-        replaced = table[key]
-        del replaced["workspace"]
+    replaced = table[key]
+    del replaced["workspace"]
 
-        workspace_copy = workspace_manifest[section][key]
+    workspace_copy = workspace_manifest[section][key]
 
-        if section == "dependencies":
-            crate_features = replaced.get("features")
+    if section == "dependencies":
+        crate_features = replaced.get("features")
 
-            if type(workspace_copy) is str:
-                replaced["version"] = workspace_copy
-            else:
-                replaced.update(workspace_copy)
+        if type(workspace_copy) is str:
+            replaced["version"] = workspace_copy
+        else:
+            replaced.update(workspace_copy)
 
-                merged_features = (crate_features or []) + (
-                    workspace_copy.get("features") or []
-                )
+            merged_features = (crate_features or []) + (
+                workspace_copy.get("features") or []
+            )
 
-                if len(merged_features) > 0:
-                    # Dictionaries are guaranteed to be ordered (https://stackoverflow.com/a/7961425)
-                    replaced["features"] = list(dict.fromkeys(merged_features))
-        elif section == "package":
-            table[key] = replaced = workspace_copy
+            if len(merged_features) > 0:
+                # Dictionaries are guaranteed to be ordered (https://stackoverflow.com/a/7961425)
+                replaced["features"] = list(dict.fromkeys(merged_features))
+    elif section == "package":
+        table[key] = replaced = workspace_copy
 
-        return True
-
-    return False
+    return True
 
 
 def replace_dependencies(
